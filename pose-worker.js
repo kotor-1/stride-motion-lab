@@ -1,15 +1,19 @@
-/* MediaPipe runs in a classic worker so its WASM loader can use importScripts. */
+/* MediaPipe runs in a classic worker so its WASM loader can use importScripts. This is a plain
+ * public/ file (not a Vite module), so it has no build-time base-path config; deriving BASE from
+ * this script's own URL instead makes it work unmodified whether the site is served from "/" or
+ * a subpath like GitHub Pages' "/repo-name/" — a hardcoded "/mediapipe/..." 404s under the latter. */
+const BASE = self.location.href.replace(/pose-worker\.js(?:\?.*)?$/, '');
 self.exports = {};
-importScripts('/mediapipe/vision_bundle.js');
+importScripts(BASE + 'mediapipe/vision_bundle.js');
 const vision = self.exports;
 let model;
 let previousHip;
 self.onmessage = async ({data}) => {
   try {
     if (data.type === 'init') {
-      const files = await vision.FilesetResolver.forVisionTasks('/mediapipe/wasm');
+      const files = await vision.FilesetResolver.forVisionTasks(BASE + 'mediapipe/wasm');
       model = await vision.PoseLandmarker.createFromOptions(files, {
-        baseOptions: { modelAssetPath: '/models/pose_landmarker_full.task', delegate: 'CPU' },
+        baseOptions: { modelAssetPath: BASE + 'models/pose_landmarker_full.task', delegate: 'CPU' },
         runningMode: 'VIDEO', numPoses: 2, minPoseDetectionConfidence: 0.45,
         minPosePresenceConfidence: 0.45, minTrackingConfidence: 0.5,
       });
